@@ -4,6 +4,6 @@ REDIS_PORT=6379
 REDIS_CHANNEL=to-akka-apps-redis-channel
 
 # Chat GPT
-CHAT_GPT_API_TOKEN=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
+CHAT_GPT_API_TOKEN=
 CHAT_GPT_BASE_URL=https://api.openai.com
 CHAT_GPT_STOP_SEQUENCE=stop_ai
