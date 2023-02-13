@@ -7,8 +7,6 @@ services:
       - .env
     container_name: bbb-chatgpt
     restart: always
+    network_mode: host
 
-    # mount redis socket
-    volumes:
-      - /var/run/redis/redis.sock:/var/run/redis/redis.sock
 
