@@ -1,0 +1,14 @@
+# nodejs docker-compose
+version: '3.7'
+services:
+  bbb-chatgpt:
+    build: .
+    env_file:
+      - .env
+    container_name: bbb-chatgpt
+    restart: always
+
+    # mount redis socket
+    volumes:
+      - /var/run/redis/redis.sock:/var/run/redis/redis.sock
+
