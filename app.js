@@ -54,12 +54,19 @@ publisher.on("error", (err) => {
 client.subscribe(CHANNEL, handleChatGPTCall);
 
 // Handle the chatGPT call
+
 async function handleChatGPTCall(data) {
+  if (
+    process.env.CHAT_GPT_ENABLED == undefined ||
+    process.env.CHAT_GPT_ENABLED != "true"
+  )
+    return;
+
   let event;
   try {
     event = JSON.parse(data);
 
-    if(!event?.envelope?.name) return;
+    if (!event?.envelope?.name) return;
 
     const { envelope } = event;
     const { name } = envelope;
@@ -71,7 +78,7 @@ async function handleChatGPTCall(data) {
     // Check if the message is a chatGPT call case insensitive
     if (
       name === "SendGroupChatMessageMsg" &&
-      message?.toLowerCase().includes("@chatgpt")
+      message?.toLowerCase().startsWith("@chatgpt")
     ) {
       isChatGPTCall = true;
     }
@@ -94,9 +101,27 @@ async function handleChatGPTCall(data) {
     // Check if the user is a moderator
     if (!chatGptService.isModerator(user)) return;
 
-    // Remove the /chatGPT command from the prompt
+    // Remove the @chatGPT command from the prompt
+    const prompt = chatGptService.getPrompt(body.msg.message);
 
-    const prompt = chatGptService.getPrompt(body.msg.message)
+    if (prompt === "help") {
+      const newTimeStamp = +new Date();
+      envelope.timestamp = newTimeStamp;
+      const newMsg = `🤖 ChatGPT: You may use prompts such as the followings to get meaningful response from chatGPT: \n
+      1. @chatGPT Create a quiz with 5 multiple choice questions that assess students' understanding of [concept being taught]. \n
+      2. @chatGPT Find the bug with this code: [post code below] \n
+      3. @chatGPT What exactly does this regex do? rege(x(es)?|xps?). \n
+      4. @chatGPT Describe [topic of your choice] in detail. \n
+      5. @chatGPT Please provide a definition for the medical term 'tachycardia'. \n
+      <a href="https://classplusplus.com/chatgpt/" target="_blank">Click here</a> for more ChatGPT prompts. \n
+      `;
+      // Update the message body
+      body.msg.message = newMsg;
+      event.core.body = body;
+      // Publish the new message to the channel
+      await publisher.publish(CHANNEL, JSON.stringify(event));
+      return;
+    }
     // Get the response from the chatGPT API
     const response = await chatGptService.getResponseFromChatGPT({ prompt });
     const newTimeStamp = +new Date();
@@ -111,9 +136,9 @@ async function handleChatGPTCall(data) {
     // Publish the new message to the channel
     await publisher.publish(CHANNEL, JSON.stringify(event));
   } catch (error) {
-    console.error(error)
+    console.error(error);
     //check if it is axios error
-    if(!error?.response?.data) return;
+    if (!error?.response?.data) return;
     const newTimeStamp = +new Date();
 
     // Update the message timestamp
@@ -124,6 +149,3 @@ async function handleChatGPTCall(data) {
     await publisher.publish(CHANNEL, JSON.stringify(event));
   }
 }
-
-
-

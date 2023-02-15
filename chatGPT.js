@@ -19,7 +19,7 @@ const chatGPT = axios.create({
  *
  */
 
- async function getResponseFromChatGPT({ prompt }) {
+async function getResponseFromChatGPT({ prompt }) {
   try {
     const { data } = await chatGPT.post("/v1/completions", {
       model: "text-davinci-003",
@@ -39,18 +39,33 @@ const chatGPT = axios.create({
 }
 
 /**
- * @param {object} user - The user object
+ * @param {object} user - The user object from the database
  * @returns {boolean} - Whether the user is a moderator or not
  * @description Check if the user is a moderator
  * @example
- * const user = {
- * role: "MODERATOR"
- * }
+ *  const user = {
+ *   role: "MODERATOR"
+ * };
  * const isModerator = chatGptService.isModerator(user);
  * console.log(isModerator); // true
+ *
  */
 function isModerator(user) {
-  return user.role === "MODERATOR";
+  // If the moderator and viewer env vars are both set to true, return true
+  if (
+    process.env.CHAT_GPT_ENABLE_FOR_MODERATOR == "true" &&
+    process.env.CHAT_GPT_ENABLE_FOR_VIEWER === "true"
+  ) {
+    return true;
+  }
+
+  // If the moderator env var is set to true and the viewer env var is set to false, return true if the user is a moderator
+  if (
+    process.env.CHAT_GPT_ENABLE_FOR_MODERATOR === "true" &&
+    process.env.CHAT_GPT_ENABLE_FOR_VIEWER === "false"
+  ) {
+    return user.role === "MODERATOR";
+  }
 }
 
 /**
